@@ -59,7 +59,8 @@ class OnlyDeskGUI:
             server_host=config.DEFAULT_SIGNAL_SERVER, 
             server_port=config.DEFAULT_SIGNAL_PORT,
             on_peer_invite=self._on_incoming_invite,
-            on_peer_info=self._on_incoming_info
+            on_peer_info=self._on_incoming_info,
+            on_error=self._on_signaling_error
         )
         self.loop.run_until_complete(self.signaling.connect())
         self.loop.run_forever()
@@ -216,6 +217,11 @@ class OnlyDeskGUI:
             messagebox.showerror("Xato", "Iltimos, ulanmoqchi bo'lgan hamkoringiz ID raqamini kiriting!")
             return
             
+        # Sanitize peer ID: format 9-digit input to XXX-XXX-XXX format automatically
+        clean_id = peer_id.replace("-", "").replace(" ", "")
+        if len(clean_id) == 9 and clean_id.isdigit():
+            peer_id = f"{clean_id[:3]}-{clean_id[3:6]}-{clean_id[6:]}"
+            
         self.btn_connect.config(state=tk.DISABLED, text="Ulanmoqda...")
         self.lbl_status.config(text=f"Hamkor {peer_id} ga ulanish so'ralmoqda...")
         
@@ -238,15 +244,26 @@ class OnlyDeskGUI:
     # Callback when peer sends invitation
     def _on_incoming_invite(self, peer_id: str, endpoints: dict):
         logger.info(f"Incoming invitation from peer {peer_id}.")
-        # Derive secure key deterministically from sorted assigned IDs
-        import hashlib
-        my_id = self.signaling.assigned_id
-        session_id = "-".join(sorted([my_id, peer_id]))
-        key_hash = hashlib.sha256(session_id.encode('utf-8')).digest()
-        b64_key = base64.b64encode(key_hash).decode('utf-8')
         
-        # Start connection manager
-        self.root.after(0, self._start_session_host, peer_id, endpoints, b64_key)
+        def prompt_permission():
+            response = messagebox.askyesno(
+                "Ulanish so'rovi", 
+                f"Foydalanuvchi {peer_id} sizning ekraningizni ko'rish va boshqarishga ruxsat so'ramoqda.\nRuxsat berasizmi?"
+            )
+            if response:
+                import hashlib
+                my_id = self.signaling.assigned_id
+                session_id = "-".join(sorted([my_id, peer_id]))
+                key_hash = hashlib.sha256(session_id.encode('utf-8')).digest()
+                b64_key = base64.b64encode(key_hash).decode('utf-8')
+                
+                self.lbl_status.config(text="Ulanish qabul qilindi. Ekran uzatilmoqda...")
+                self._start_session_host(peer_id, endpoints, b64_key)
+            else:
+                logger.info(f"User rejected connection from peer {peer_id}")
+                self.lbl_status.config(text="Ulanish so'rovi rad etildi.")
+                
+        self.root.after(0, prompt_permission)
 
     # Callback when initiator receives rendezvous peer info
     def _on_incoming_info(self, peer_id: str, endpoints: dict):
@@ -259,6 +276,10 @@ class OnlyDeskGUI:
         b64_key = base64.b64encode(key_hash).decode('utf-8')
         
         self.root.after(0, self._start_session_viewer, peer_id, endpoints, b64_key)
+
+    def _on_signaling_error(self, err_msg: str):
+        # Reset button and show error message on main thread
+        self.root.after(0, self._reset_connect_btn, f"Xato: {err_msg}")
 
     def _start_session_host(self, peer_id: str, endpoints: dict, b64_key: str):
         """
@@ -368,11 +389,11 @@ class OnlyDeskGUI:
                     raw_bytes = base64.b64decode(msg["data"].encode('utf-8'))
                     frame = decoder.decode(raw_bytes)
                     if frame is not None:
-                        viewer.render(frame)
+                        viewer.render_frame(frame)
                 elif msg.get("type") == "clipboard":
                     clipboard.set_text(msg["text"])
             except Exception as e:
-                pass
+                logger.error(f"Error processing received viewer data: {e}")
 
         manager = ConnectionManager(self.signaling.assigned_id, config.DEFAULT_SIGNAL_SERVER, config.DEFAULT_SIGNAL_PORT, on_data_received)
         self.active_manager = manager
