@@ -57,8 +57,8 @@ Serverga ulangandan so'ng, quyidagi qadamlarni bajaring:
 
 ### A. Loyihani yuklab olish (Git orqali)
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/onlydesk.git
-cd onlydesk
+git clone https://github.com/Inomjonoff/OnlyDesk.git
+cd OnlyDesk
 ```
 
 ### B. Avtomatik o'rnatish skriptini ishga tushirish
