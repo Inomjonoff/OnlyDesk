@@ -387,8 +387,8 @@ class OnlyDeskGUI:
                 msg = json.loads(data.decode('utf-8'))
                 if msg.get("type") == "video":
                     raw_bytes = base64.b64decode(msg["data"].encode('utf-8'))
-                    frame = decoder.decode(raw_bytes)
-                    if frame is not None:
+                    decoded_frames = decoder.decode(raw_bytes)
+                    for frame in decoded_frames:
                         viewer.render_frame(frame)
                 elif msg.get("type") == "clipboard":
                     clipboard.set_text(msg["text"])
