@@ -226,7 +226,7 @@ class OnlyDeskGUI:
         try:
             logger.info(f"Initiating connection to peer {target_id}...")
             # Request connection rendezvous via signaling server
-            await self.signaling.request_connection(target_id)
+            await self.signaling.connect_to_peer(target_id)
         except Exception as e:
             logger.error(f"Error requesting connection flow: {e}")
             self.root.after(0, self._reset_connect_btn, f"Xato: {e}")
@@ -238,21 +238,26 @@ class OnlyDeskGUI:
     # Callback when peer sends invitation
     def _on_incoming_invite(self, peer_id: str, endpoints: dict):
         logger.info(f"Incoming invitation from peer {peer_id}.")
-        # Accept invite dynamically and load key
-        raw_key = nacl.utils.random(32)
-        b64_key = base64.b64encode(raw_key).decode('utf-8')
+        # Derive secure key deterministically from sorted assigned IDs
+        import hashlib
+        my_id = self.signaling.assigned_id
+        session_id = "-".join(sorted([my_id, peer_id]))
+        key_hash = hashlib.sha256(session_id.encode('utf-8')).digest()
+        b64_key = base64.b64encode(key_hash).decode('utf-8')
         
-        # Send info back via signaling server
-        asyncio.run_coroutine_threadsafe(
-            self.signaling.send_peer_info(peer_id, b64_key),
-            self.loop
-        )
         # Start connection manager
         self.root.after(0, self._start_session_host, peer_id, endpoints, b64_key)
 
     # Callback when initiator receives rendezvous peer info
-    def _on_incoming_info(self, peer_id: str, endpoints: dict, b64_key: str):
+    def _on_incoming_info(self, peer_id: str, endpoints: dict):
         logger.info(f"Rendezvous info received for peer {peer_id}.")
+        # Derive secure key deterministically from sorted assigned IDs
+        import hashlib
+        my_id = self.signaling.assigned_id
+        session_id = "-".join(sorted([my_id, peer_id]))
+        key_hash = hashlib.sha256(session_id.encode('utf-8')).digest()
+        b64_key = base64.b64encode(key_hash).decode('utf-8')
+        
         self.root.after(0, self._start_session_viewer, peer_id, endpoints, b64_key)
 
     def _start_session_host(self, peer_id: str, endpoints: dict, b64_key: str):
@@ -294,7 +299,7 @@ class OnlyDeskGUI:
             except Exception as e:
                 pass
 
-        manager = ConnectionManager(self.client_id, config.DEFAULT_SIGNAL_SERVER, config.DEFAULT_SIGNAL_PORT, on_data_received)
+        manager = ConnectionManager(self.signaling.assigned_id, config.DEFAULT_SIGNAL_SERVER, config.DEFAULT_SIGNAL_PORT, on_data_received)
         self.active_manager = manager
         
         async def run():
@@ -369,7 +374,7 @@ class OnlyDeskGUI:
             except Exception as e:
                 pass
 
-        manager = ConnectionManager(self.client_id, config.DEFAULT_SIGNAL_SERVER, config.DEFAULT_SIGNAL_PORT, on_data_received)
+        manager = ConnectionManager(self.signaling.assigned_id, config.DEFAULT_SIGNAL_SERVER, config.DEFAULT_SIGNAL_PORT, on_data_received)
         self.active_manager = manager
 
         async def run():
