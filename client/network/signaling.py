@@ -43,12 +43,14 @@ class SignalingClient:
         server_host: str = config.DEFAULT_SIGNAL_SERVER, 
         server_port: int = config.DEFAULT_SIGNAL_PORT,
         on_peer_invite: Optional[Callable[[str, Dict[str, Any]], Any]] = None,
-        on_peer_info: Optional[Callable[[str, Dict[str, Any]], Any]] = None
+        on_peer_info: Optional[Callable[[str, Dict[str, Any]], Any]] = None,
+        on_error: Optional[Callable[[str], Any]] = None
     ):
         self.server_host = server_host
         self.server_port = server_port
         self.on_peer_invite = on_peer_invite
         self.on_peer_info = on_peer_info
+        self.on_error = on_error
         
         self.assigned_id: Optional[str] = None
         self.reader: Optional[asyncio.StreamReader] = None
@@ -166,7 +168,10 @@ class SignalingClient:
                             self.on_peer_info(peer_id, peer_endpoints)
                             
                 elif msg_type == protocol.MSG_ERROR:
-                    logger.error(f"Signaling Server Error: {payload.get('message')}")
+                    err_msg = payload.get('message', 'Noma\'lum xato')
+                    logger.error(f"Signaling Server Error: {err_msg}")
+                    if self.on_error:
+                        self.on_error(err_msg)
                     
         except asyncio.CancelledError:
             pass
