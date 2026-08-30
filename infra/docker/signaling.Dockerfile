@@ -4,7 +4,12 @@ RUN npm install -g pnpm
 
 FROM base AS builder
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm --filter @nexusdesk/config build || true
+RUN pnpm --filter @nexusdesk/crypto build || true
+RUN pnpm --filter @nexusdesk/protocol build || true
+RUN pnpm --filter @nexusdesk/validation build || true
+RUN pnpm --filter @nexusdesk/types build || true
 RUN pnpm --filter @nexusdesk/signaling build
 
 FROM base AS runner

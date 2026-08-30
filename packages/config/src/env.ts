@@ -5,10 +5,10 @@ dotenv.config();
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  API_PORT: z.coerce.number().default(4000),
-  SIGNALING_PORT: z.coerce.number().default(4001),
-  AI_PORT: z.coerce.number().default(4002),
-  WORKER_PORT: z.coerce.number().default(4003),
+  API_PORT: z.coerce.number().default(Number(process.env.API_PORT || process.env.PORT) || 4000),
+  SIGNALING_PORT: z.coerce.number().default(Number(process.env.SIGNALING_PORT || process.env.PORT) || 4001),
+  AI_PORT: z.coerce.number().default(Number(process.env.AI_PORT || process.env.PORT) || 4002),
+  WORKER_PORT: z.coerce.number().default(Number(process.env.WORKER_PORT || process.env.PORT) || 4003),
   DATABASE_URL: z
     .string()
     .default("postgresql://nexus:nexuspassword@localhost:5432/nexusdesk?schema=public"),

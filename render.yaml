@@ -1,0 +1,65 @@
+# Render Blueprint for NexusDesk AI
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # 1. NexusDesk REST API Control Plane
+  - type: web
+    name: nexusdesk-api
+    runtime: docker
+    dockerfilePath: ./infra/docker/api.Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexusdesk-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: nexusdesk-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: PRODUCTION_DOMAIN
+        value: nexusdesk.uz
+
+  # 2. NexusDesk Realtime WebRTC Signaling Server (WebSocket)
+  - type: web
+    name: nexusdesk-signaling
+    runtime: docker
+    dockerfilePath: ./infra/docker/signaling.Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: nexusdesk-redis
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: nexusdesk-api
+          envVarKey: JWT_SECRET
+
+databases:
+  # Managed PostgreSQL Database
+  - name: nexusdesk-db
+    databaseName: nexusdesk
+    user: nexus
+    plan: free
+    region: oregon
+
+# Managed Redis Key-Value Store
+# Note: Render provides Redis free tier or Key-Value instances
