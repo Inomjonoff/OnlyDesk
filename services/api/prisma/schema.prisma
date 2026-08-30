@@ -1,0 +1,418 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  SUPPORT_AGENT
+  ADMIN
+  OWNER
+}
+
+enum DevicePlatform {
+  WINDOWS
+  MACOS
+  LINUX
+}
+
+enum DeviceState {
+  ONLINE
+  OFFLINE
+  BUSY
+  STALE
+}
+
+enum SessionStatus {
+  CREATED
+  REQUESTED
+  WAITING_FOR_APPROVAL
+  APPROVED
+  NEGOTIATING
+  CONNECTING
+  CONNECTED
+  RECONNECTING
+  ENDED
+  REJECTED
+  TIMEOUT
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum ParticipantRole {
+  HOST
+  VIEWER
+  CONTROLLER
+}
+
+enum ActionRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id               String           @id @default(uuid())
+  email            String           @unique
+  passwordHash     String
+  name             String
+  role             UserRole         @default(USER)
+  avatarUrl        String?
+  twoFactorEnabled Boolean          @default(false)
+  twoFactorSecret  String?
+  memberships      Membership[]
+  devices          Device[]
+  createdSessions  RemoteSession[]  @relation("SessionCreator")
+  auditLogs        AuditLog[]
+  aiConversations  AiConversation[]
+  refreshTokens    RefreshToken[]
+  loginSessions    LoginSession[]
+  apiKeys          ApiKey[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([email])
+}
+
+model Organization {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  memberships Membership[]
+  devices     Device[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Membership {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  role           UserRole     @default(USER)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId])
+}
+
+model Device {
+  id             String               @id @default(uuid())
+  displayId      String               @unique // e.g. NXD-AB12-CD34
+  name           String
+  fingerprint    String               @unique // SHA256:xxxx
+  publicKey      String
+  platform       DevicePlatform
+  osVersion      String
+  appVersion     String
+  status         DeviceState          @default(OFFLINE)
+  userId         String?
+  organizationId String?
+  user           User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization   Organization?        @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  deviceKeys     DeviceKey[]
+  deviceStatuses DeviceStatus[]
+  hostSessions   RemoteSession[]      @relation("HostDevice")
+  viewerSessions RemoteSession[]      @relation("ViewerDevice")
+  participants   SessionParticipant[]
+  diagnostics    DiagnosticSnapshot[]
+  auditLogs      AuditLog[]
+  lastSeenAt     DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([displayId])
+  @@index([fingerprint])
+}
+
+model DeviceKey {
+  id          String   @id @default(uuid())
+  deviceId    String
+  keyType     String   @default("Ed25519")
+  publicKey   String
+  fingerprint String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model DeviceStatus {
+  id            String   @id @default(uuid())
+  deviceId      String
+  status        DeviceState
+  ipAddress     String?
+  cpuPercent    Float?
+  memoryUsedMb  Float?
+  memoryTotalMb Float?
+  device        Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@index([deviceId, createdAt])
+}
+
+model RemoteSession {
+  id                   String               @id @default(uuid())
+  hostDeviceId         String
+  viewerDeviceId       String
+  createdById          String
+  status               SessionStatus        @default(CREATED)
+  hostDevice           Device               @relation("HostDevice", fields: [hostDeviceId], references: [id])
+  viewerDevice         Device               @relation("ViewerDevice", fields: [viewerDeviceId], references: [id])
+  createdBy            User                 @relation("SessionCreator", fields: [createdById], references: [id])
+  participants         SessionParticipant[]
+  permissions          SessionPermission[]
+  events               SessionEvent[]
+  files                FileTransfer[]
+  messages             ChatMessage[]
+  recordings           Recording[]
+  diagnostics          DiagnosticSnapshot[]
+  aiConversations      AiConversation[]
+  commandRequests      CommandRequest[]
+  startedAt            DateTime?
+  endedAt              DateTime?
+  endReason            String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  @@index([hostDeviceId])
+  @@index([viewerDeviceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SessionParticipant {
+  id        String          @id @default(uuid())
+  sessionId String
+  deviceId  String
+  role      ParticipantRole
+  session   RemoteSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  device    Device          @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime        @default(now())
+  leftAt    DateTime?
+
+  @@index([sessionId])
+}
+
+model SessionPermission {
+  id         String        @id @default(uuid())
+  sessionId  String
+  permission String
+  granted    Boolean       @default(false)
+  session    RemoteSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  grantedAt  DateTime?
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([sessionId, permission])
+}
+
+model SessionEvent {
+  id        String        @id @default(uuid())
+  sessionId String
+  eventType String
+  payload   Json?
+  session   RemoteSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model FileTransfer {
+  id                 String              @id @default(uuid())
+  sessionId          String
+  senderDeviceId     String
+  fileName           String
+  fileSizeBytes      BigInt
+  mimeType           String
+  totalChunks        Int
+  transferredChunks  Int                 @default(0)
+  sha256Checksum     String
+  status             String              @default("PENDING")
+  session            RemoteSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  chunks             FileTransferChunk[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([sessionId])
+}
+
+model FileTransferChunk {
+  id             String       @id @default(uuid())
+  fileTransferId String
+  chunkIndex     Int
+  chunkSizeBytes Int
+  sha256Checksum String
+  fileTransfer   FileTransfer @relation(fields: [fileTransferId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([fileTransferId, chunkIndex])
+}
+
+model ClipboardEvent {
+  id         String   @id @default(uuid())
+  sessionId  String
+  format     String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model ChatMessage {
+  id             String        @id @default(uuid())
+  sessionId      String
+  senderDeviceId String
+  senderName     String
+  content        String
+  type           String        @default("TEXT")
+  session        RemoteSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model Recording {
+  id             String        @id @default(uuid())
+  sessionId      String
+  storageUrl     String
+  durationSec    Int           @default(0)
+  sizeBytes      BigInt        @default(0)
+  mimeType       String        @default("video/webm")
+  session        RemoteSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@index([sessionId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  eventType String
+  userId    String?
+  deviceId  String?
+  sessionId String?
+  ipAddress String?
+  metadata  Json?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  device    Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model AiConversation {
+  id        String        @id @default(uuid())
+  userId    String?
+  sessionId String?
+  title     String        @default("Diagnostic Session")
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session   RemoteSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  messages  AiMessage[]
+  insights  AiInsight[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model AiMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  role           String // user, assistant, system
+  content        String
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+}
+
+model AiInsight {
+  id             String         @id @default(uuid())
+  conversationId String
+  summary        String
+  severity       String
+  findings       Json
+  recommendations Json
+  confidence     Float
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+}
+
+model DiagnosticSnapshot {
+  id        String        @id @default(uuid())
+  deviceId  String
+  sessionId String?
+  os        String
+  cpuUsage  Float
+  ramUsage  Float
+  diskUsage Float
+  processes Json?
+  device    Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  session   RemoteSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  createdAt DateTime      @default(now())
+
+  @@index([deviceId, createdAt])
+}
+
+model CommandRequest {
+  id          String             @id @default(uuid())
+  sessionId   String
+  action      String
+  parameters  Json?
+  riskLevel   ActionRiskLevel    @default(LOW)
+  status      String             @default("PENDING") // PENDING, APPROVED, REJECTED, EXECUTED
+  session     RemoteSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  executions  CommandExecution[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model CommandExecution {
+  id               String         @id @default(uuid())
+  commandRequestId String
+  status           String         // SUCCESS, FAILED
+  result           Json?
+  durationMs       Int
+  commandRequest   CommandRequest @relation(fields: [commandRequestId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+}
+
+model ApiKey {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String
+  keyHash   String    @unique
+  prefix    String
+  expiresAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model LoginSession {
+  id        String   @id @default(uuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model RateLimitRecord {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  points    Int      @default(0)
+  expireAt  DateTime
+}

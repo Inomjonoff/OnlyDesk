@@ -1,0 +1,29 @@
+groups:
+  - name: nexusdesk_alerts
+    rules:
+      - alert: ApiHighErrorRate
+        expr: rate(nexusdesk_http_errors_total[5m]) / rate(nexusdesk_http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NexusDesk API error rate exceeded 5%"
+          description: "High error rate detected on API service over a 5-minute window."
+
+      - alert: SignalingHighConnections
+        expr: nexusdesk_signaling_connections > 50
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Signaling connection quota approaching threshold"
+          description: "Active WebSocket connection count exceeded free demo threshold of 50."
+
+      - alert: ServiceMemoryHigh
+        expr: nexusdesk_process_memory_heap_bytes > 524288000
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Service heap memory high (>500MB)"
+          description: "Process memory consumption elevated, potential memory leak."

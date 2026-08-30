@@ -1,24 +1,61 @@
-# Virtual Environments
-.venv/
-venv/
-ENV/
-env/
+# Dependencies
+node_modules/
+.pnpm-store/
 
-# Python Cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# PyInstaller / Build Artifacts
-build/
+# Build outputs
 dist/
-*.spec
+build/
+.next/
+out/
+*.tsbuildinfo
 
-# IDE configs
-.vscode/
+# Turbo
+.turbo/
+
+# Rust / Cargo
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Tauri
+apps/desktop/src-tauri/target/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.development
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor
 .idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Local databases
-*.db
-*.sqlite3
+# Coverage & Tests
+coverage/
+.nyc_output/
+test-results/
+
+# Temporary data
+tmp/
+scratch/

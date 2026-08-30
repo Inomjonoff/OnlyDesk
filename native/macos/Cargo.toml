@@ -1,0 +1,10 @@
+[package]
+name = "nexusdesk-native-macos"
+version = "0.1.0"
+description = "NexusDesk macOS native screen capture and input injection layer"
+authors = ["NexusDesk AI Team"]
+edition = "2021"
+
+[dependencies]
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }

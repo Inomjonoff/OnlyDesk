@@ -1,0 +1,15 @@
+export const THEME_COLORS = {
+  background: "#090d16",
+  surface: "#111827",
+  surfaceBorder: "#1f2937",
+  primary: "#3b82f6",
+  primaryHover: "#2563eb",
+  accent: "#8b5cf6",
+  accentGlow: "rgba(139, 92, 246, 0.15)",
+  success: "#10b981",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  textPrimary: "#f9fafb",
+  textSecondary: "#9ca3af",
+  textMuted: "#6b7280",
+} as const;

@@ -1,0 +1,10 @@
+[package]
+name = "nexusdesk-native-linux"
+version = "0.1.0"
+description = "NexusDesk Linux native screen capture and input injection layer"
+authors = ["NexusDesk AI Team"]
+edition = "2021"
+
+[dependencies]
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
