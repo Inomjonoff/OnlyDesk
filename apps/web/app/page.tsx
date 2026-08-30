@@ -44,8 +44,11 @@ export default function LandingPage() {
           <a href="#architecture" className="hover:text-blue-400 transition-colors">
             Architecture
           </a>
-          <a href="#security" className="hover:text-blue-400 transition-colors">
-            Security
+          <a href="/download" className="hover:text-blue-400 transition-colors">
+            Download
+          </a>
+          <a href="/status" className="hover:text-blue-400 transition-colors">
+            Status
           </a>
         </nav>
 
@@ -57,10 +60,10 @@ export default function LandingPage() {
             Sign In
           </a>
           <a
-            href="#download"
+            href="/download"
             className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/25 transition-all active:scale-95"
           >
-            Get Started
+            Download Agent
           </a>
         </div>
       </header>
@@ -89,7 +92,7 @@ export default function LandingPage() {
           real-time AI diagnostic intelligence and zero-trust security.
         </p>
 
-        {/* Quick Connect Bar */}
+        {/* Quick Connect Bar & Action CTAs */}
         <div className="mt-10 w-full max-w-xl p-2 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl flex flex-col sm:flex-row gap-2">
           <div className="flex-1 flex items-center gap-3 px-3 bg-slate-950/60 rounded-xl border border-slate-800">
             <Monitor className="w-4 h-4 text-slate-500" />
@@ -109,6 +112,16 @@ export default function LandingPage() {
           >
             Connect <ArrowRight className="w-4 h-4" />
           </button>
+        </div>
+
+        <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
+          <span>Or download the client:</span>
+          <a
+            href="/download"
+            className="text-blue-400 hover:text-blue-300 font-semibold underline underline-offset-4"
+          >
+            Windows Desktop Client (v1.0.0-beta.1) →
+          </a>
         </div>
 
         {/* Quick Metrics */}
