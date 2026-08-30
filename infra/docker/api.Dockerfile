@@ -19,4 +19,4 @@ ENV NODE_ENV=production
 COPY --from=builder /app /app
 WORKDIR /app/services/api
 EXPOSE 4000
-CMD ["node", "dist/index.js"]
+CMD ["pnpm", "start"]

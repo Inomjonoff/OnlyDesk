@@ -18,4 +18,4 @@ ENV NODE_ENV=production
 COPY --from=builder /app /app
 WORKDIR /app/services/signaling
 EXPOSE 4001
-CMD ["node", "dist/index.js"]
+CMD ["pnpm", "start"]
