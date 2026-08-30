@@ -48,6 +48,7 @@ export default function LoginPage() {
         localStorage.setItem("nexus_user", JSON.stringify(data.user));
       }
 
+      router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
         if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || err.message.includes("is not valid JSON")) {
