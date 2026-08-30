@@ -42,7 +42,7 @@ export default function DevicesPage() {
 
   const fetchDevices = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://nexusdesk-api-zygp.onrender.com";
       const token = localStorage.getItem("nexus_access_token");
       if (!token) {
         setIsLoading(false);

@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
   const fetchDevices = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://nexusdesk-api-zygp.onrender.com";
       const token = localStorage.getItem("nexus_access_token");
       const res = await fetch(`${apiUrl}/api/v1/devices`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -128,7 +128,7 @@ export default function DashboardPage() {
   // Initiate Remote Session
   const handleInitiateSession = async (device: DeviceItem) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://nexusdesk-api-zygp.onrender.com";
       const token = localStorage.getItem("nexus_access_token") || "mock_user_token";
       const res = await fetch(`${apiUrl}/api/v1/sessions`, {
         method: "POST",
@@ -181,7 +181,7 @@ export default function DashboardPage() {
 
   const connectSignaling = (sessionId: string, device?: DeviceItem) => {
     try {
-      const signalBase = process.env.NEXT_PUBLIC_SIGNAL_URL || "ws://localhost:4001/ws";
+      const signalBase = process.env.NEXT_PUBLIC_SIGNAL_URL || "wss://nexusdesk-signaling.onrender.com/ws";
       const token = localStorage.getItem("nexus_access_token") || "mock_user_token";
       const wsUrl = signalBase.includes("?") ? `${signalBase}&token=${token}` : `${signalBase}?token=${token}&deviceId=dev_web_client`;
       const ws = new WebSocket(wsUrl);
@@ -263,7 +263,7 @@ export default function DashboardPage() {
   const handleCancelSession = async () => {
     if (activeSession) {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://nexusdesk-api-zygp.onrender.com";
         await fetch(`${apiUrl}/api/v1/sessions/${activeSession.sessionId}/cancel`, {
           method: "POST",
         });
