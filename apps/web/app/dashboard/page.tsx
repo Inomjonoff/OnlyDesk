@@ -153,7 +153,7 @@ export default function DashboardPage() {
       });
 
       // Connect to signaling websocket to listen for approval
-      connectSignaling(sessionId);
+      connectSignaling(sessionId, device);
     } catch {
       // Fallback
       setActiveSession({
@@ -162,13 +162,29 @@ export default function DashboardPage() {
         status: "WAITING_FOR_APPROVAL",
         countdown: 60,
       });
+
+      if (device.id.includes("sample")) {
+        setTimeout(() => {
+          setActiveSession((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: "READY_FOR_WEBRTC",
+                  grantedPermissions: ["SCREEN_VIEW", "MOUSE_CONTROL", "KEYBOARD_CONTROL", "AI_ANALYSIS"],
+                }
+              : null,
+          );
+        }, 3500);
+      }
     }
   };
 
-  const connectSignaling = (sessionId: string) => {
+  const connectSignaling = (sessionId: string, device?: DeviceItem) => {
     try {
+      const signalBase = process.env.NEXT_PUBLIC_SIGNAL_URL || "ws://localhost:4001/ws";
       const token = localStorage.getItem("nexus_access_token") || "mock_user_token";
-      const ws = new WebSocket(`ws://localhost:4001/ws?token=${token}&deviceId=dev_web_client`);
+      const wsUrl = signalBase.includes("?") ? `${signalBase}&token=${token}` : `${signalBase}?token=${token}&deviceId=dev_web_client`;
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -203,6 +219,23 @@ export default function DashboardPage() {
           }
         } catch {
           // Ignore
+        }
+      };
+
+      ws.onerror = () => {
+        // In offline preview mode, simulate auto-approval for sample devices
+        if (device && device.id.includes("sample")) {
+          setTimeout(() => {
+            setActiveSession((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: "READY_FOR_WEBRTC",
+                    grantedPermissions: ["SCREEN_VIEW", "MOUSE_CONTROL", "KEYBOARD_CONTROL", "AI_ANALYSIS"],
+                  }
+                : null,
+            );
+          }, 3000);
         }
       };
     } catch {

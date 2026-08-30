@@ -48,14 +48,17 @@ export default function LoginPage() {
         localStorage.setItem("nexus_user", JSON.stringify(data.user));
       }
 
-      router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
-        if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-          setError("API Control Plane is currently unreachable. You can continue in offline Demo Mode.");
-        } else {
-          setError(err.message);
+        if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || err.message.includes("is not valid JSON")) {
+          // Seamless Offline Demo Fallback
+          const userName = email.split("@")[0] || "Demo User";
+          localStorage.setItem("nexus_user", JSON.stringify({ email: email || "demo.engineer@nexusdesk.uz", name: userName }));
+          localStorage.setItem("nexus_demo_mode", "true");
+          router.push("/dashboard");
+          return;
         }
+        setError(err.message);
       }
     } finally {
       setIsLoading(false);
@@ -64,6 +67,7 @@ export default function LoginPage() {
 
   const handleDemoLogin = () => {
     localStorage.setItem("nexus_user", JSON.stringify({ email: "demo.engineer@nexusdesk.uz", name: "Demo User" }));
+    localStorage.setItem("nexus_demo_mode", "true");
     router.push("/dashboard");
   };
 
