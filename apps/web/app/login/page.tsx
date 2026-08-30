@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Monitor, ArrowRight, ShieldCheck, Lock, Mail, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Lock, Mail, ArrowRight, Monitor, ShieldCheck, Sparkles, KeyRound } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@nexusdesk.uz");
+  const [password, setPassword] = useState("admin123");
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,12 +25,18 @@ export default function LoginPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://nexusdesk-api-zygp.onrender.com";
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
       const res = await fetch(`${apiUrl}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, twoFactorCode: twoFactorCode || undefined }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await res.json();
 
       if (!res.ok) {
@@ -48,15 +54,20 @@ export default function LoginPage() {
         localStorage.setItem("nexus_user", JSON.stringify(data.user));
       }
 
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err: unknown) {
       if (err instanceof Error) {
-        if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError") || err.message.includes("is not valid JSON")) {
+        if (
+          err.name === "AbortError" ||
+          err.message.includes("Failed to fetch") ||
+          err.message.includes("NetworkError") ||
+          err.message.includes("is not valid JSON")
+        ) {
           // Seamless Offline Demo Fallback
           const userName = email.split("@")[0] || "Demo User";
           localStorage.setItem("nexus_user", JSON.stringify({ email: email || "demo.engineer@nexusdesk.uz", name: userName }));
           localStorage.setItem("nexus_demo_mode", "true");
-          router.push("/dashboard");
+          window.location.href = "/dashboard";
           return;
         }
         setError(err.message);
@@ -69,7 +80,13 @@ export default function LoginPage() {
   const handleDemoLogin = () => {
     localStorage.setItem("nexus_user", JSON.stringify({ email: "demo.engineer@nexusdesk.uz", name: "Demo User" }));
     localStorage.setItem("nexus_demo_mode", "true");
-    router.push("/dashboard");
+    window.location.href = "/dashboard";
+  };
+
+  const handleFillAdmin = () => {
+    setEmail("admin@nexusdesk.uz");
+    setPassword("admin123");
+    setError(null);
   };
 
   return (
@@ -85,13 +102,34 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="p-8 rounded-2xl glass-panel border border-slate-800 shadow-2xl">
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-2xl shadow-black/50">
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-red-950/50 border border-red-800/60 text-xs text-red-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center justify-between">
               <span>{error}</span>
+              <button 
+                type="button" 
+                onClick={handleFillAdmin}
+                className="underline hover:text-red-300 font-semibold"
+              >
+                Reset to Admin
+              </button>
             </div>
           )}
+
+          {/* Quick Preset Buttons */}
+          <div className="mb-6 p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-slate-300">
+              <KeyRound className="w-3.5 h-3.5 text-blue-400" />
+              <span>Default: <strong>admin@nexusdesk.uz</strong></span>
+            </div>
+            <button
+              type="button"
+              onClick={handleFillAdmin}
+              className="text-[11px] px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-medium transition-colors"
+            >
+              Fill Credentials
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -105,7 +143,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
+                  placeholder="admin@nexusdesk.uz"
                   className="w-full bg-slate-950 pl-10 pr-4 py-2.5 rounded-xl border border-slate-800 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -159,8 +197,9 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleDemoLogin}
-              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+              className="w-full py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 font-medium text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
             >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               Explore in Standalone Demo Mode
             </button>
           </form>
