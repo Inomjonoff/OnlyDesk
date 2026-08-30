@@ -1,9 +1,9 @@
 import React from "react";
-import { Shield, ShieldAlert, Monitor, MousePointer, Folder, Clipboard, Video, Bot, XCircle } from "lucide-react";
+import { Monitor, MousePointer, Folder, Clipboard, Bot, XCircle } from "lucide-react";
 import { SessionPermission } from "@nexusdesk/types";
 
 export interface SessionHudProps {
-  sessionId: string;
+  sessionId?: string;
   durationSec: number;
   permissions: SessionPermission[];
   onStopRemoteControl: () => void;
@@ -12,7 +12,6 @@ export interface SessionHudProps {
 }
 
 export const SessionHud: React.FC<SessionHudProps> = ({
-  sessionId,
   durationSec,
   permissions,
   onStopRemoteControl,
@@ -43,10 +42,10 @@ export const SessionHud: React.FC<SessionHudProps> = ({
         <span title="Mouse/Keyboard" className={`p-1.5 rounded-lg ${hasPermission("MOUSE_CONTROL") ? "bg-emerald-600/30 text-emerald-400" : "opacity-30"}`}>
           <MousePointer className="w-3.5 h-3.5" />
         </span>
-        <span title="File Transfer" className={`p-1.5 rounded-lg ${hasPermission("FILE_TRANSFER") ? "bg-purple-600/30 text-purple-400" : "opacity-30"}`}>
+        <span title="File Transfer" className={`p-1.5 rounded-lg ${hasPermission("FILE_WRITE") || hasPermission("FILE_READ") ? "bg-purple-600/30 text-purple-400" : "opacity-30"}`}>
           <Folder className="w-3.5 h-3.5" />
         </span>
-        <span title="Clipboard" className={`p-1.5 rounded-lg ${hasPermission("CLIPBOARD_SYNC") ? "bg-amber-600/30 text-amber-400" : "opacity-30"}`}>
+        <span title="Clipboard" className={`p-1.5 rounded-lg ${hasPermission("CLIPBOARD_WRITE") || hasPermission("CLIPBOARD_READ") ? "bg-amber-600/30 text-amber-400" : "opacity-30"}`}>
           <Clipboard className="w-3.5 h-3.5" />
         </span>
         <span title="AI Copilot" className={`p-1.5 rounded-lg ${hasPermission("AI_COMPUTER_USE") ? "bg-indigo-600/30 text-indigo-400" : "opacity-30"}`}>

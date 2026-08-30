@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@nexusdesk.ai");
-  const [password, setPassword] = useState("Password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +16,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
@@ -35,7 +39,7 @@ export default function LoginPage() {
           setIsLoading(false);
           return;
         }
-        throw new Error(data.error?.message || "Login failed");
+        throw new Error(data.error?.message || "Invalid email or password.");
       }
 
       if (data.tokens?.accessToken) {
@@ -46,19 +50,21 @@ export default function LoginPage() {
 
       router.push("/dashboard");
     } catch (err: unknown) {
-      // Fallback for visual demonstration if backend port 4000 is not yet started in dev
       if (err instanceof Error) {
         if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-          // Demo fallback
-          localStorage.setItem("nexus_user", JSON.stringify({ email, name: "Admin Developer" }));
-          router.push("/dashboard");
-          return;
+          setError("API Control Plane is currently unreachable. You can continue in offline Demo Mode.");
+        } else {
+          setError(err.message);
         }
-        setError(err.message);
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    localStorage.setItem("nexus_user", JSON.stringify({ email: "demo.engineer@nexusdesk.uz", name: "Demo User" }));
+    router.push("/dashboard");
   };
 
   return (
@@ -143,6 +149,14 @@ export default function LoginPage() {
             >
               {isLoading ? "Authenticating..." : "Sign In"}
               <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            >
+              Explore in Standalone Demo Mode
             </button>
           </form>
 

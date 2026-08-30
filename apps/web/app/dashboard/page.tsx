@@ -53,11 +53,11 @@ interface ActiveSessionModalState {
 }
 
 export default function DashboardPage() {
-  const [devices, setDevices] = useState<DeviceItem[]>([
+  const sampleDashboardDevices: DeviceItem[] = [
     {
-      id: "dev_win_1",
+      id: "dev_sample_1",
       displayId: "NXD-W9A2-K7L4",
-      name: "Engineering Workstation (Dell XPS)",
+      name: "Engineering Workstation (Sample)",
       platform: "WINDOWS",
       osVersion: "Windows 11 Pro 23H2",
       appVersion: "1.0.0",
@@ -71,34 +71,24 @@ export default function DashboardPage() {
       },
     },
     {
-      id: "dev_mac_2",
+      id: "dev_sample_2",
       displayId: "NXD-M3P1-X9Y2",
-      name: "MacBook Pro M3 Max",
-      platform: "MACOS",
-      osVersion: "macOS Sonoma 14.5",
+      name: "Office Laptop (Sample)",
+      platform: "WINDOWS",
+      osVersion: "Windows 11",
       appVersion: "1.0.0",
       status: "ONLINE",
       fingerprint: "SHA256:1f2a3b4c5d6e7f8a9b0c1d4a8b7c9d0e",
       lastSeenAt: new Date().toISOString(),
       metrics: {
         cpuPercent: 8.5,
-        memoryUsedMb: 12288,
-        memoryTotalMb: 65536,
+        memoryUsedMb: 8192,
+        memoryTotalMb: 16384,
       },
     },
-    {
-      id: "dev_lin_3",
-      displayId: "NXD-L8N4-Q2R7",
-      name: "Ubuntu Build Server",
-      platform: "LINUX",
-      osVersion: "Ubuntu 24.04 LTS",
-      appVersion: "1.0.0",
-      status: "OFFLINE",
-      fingerprint: "SHA256:9b0c1d4a8b7c9d0e1f2a3b4c5d6e7f8a",
-      lastSeenAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-  ]);
+  ];
 
+  const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -108,7 +98,10 @@ export default function DashboardPage() {
   const fetchDevices = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      const res = await fetch(`${apiUrl}/api/v1/devices`);
+      const token = localStorage.getItem("nexus_access_token");
+      const res = await fetch(`${apiUrl}/api/v1/devices`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.devices && data.devices.length > 0) {
@@ -327,22 +320,48 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Device Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredDevices.map((device) => {
-            const isOnline = device.status === "ONLINE";
+        {/* Device Grid or Empty State */}
+        {filteredDevices.length === 0 ? (
+          <div className="p-12 rounded-3xl glass-panel border border-slate-800 text-center max-w-xl mx-auto shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-blue-950/60 border border-blue-800/40 flex items-center justify-center mx-auto mb-4 text-blue-400">
+              <Monitor className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-100">No Paired Devices Online</h3>
+            <p className="text-slate-400 text-xs mt-2 leading-relaxed">
+              Install the NexusDesk Desktop Agent on your computer and sign in to establish a zero-trust WebRTC connection.
+            </p>
 
-            return (
-              <div
-                key={device.id}
-                className="p-5 rounded-2xl glass-panel border border-slate-800 hover:border-slate-700/80 transition-all flex flex-col justify-between shadow-xl"
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/download"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
               >
-                <div>
-                  {/* Top line with OS & Presence Badge */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                      {device.platform}
-                    </span>
+                <span>Download Desktop Agent</span>
+              </Link>
+              <button
+                onClick={() => setDevices(sampleDashboardDevices)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center gap-2 border border-slate-700"
+              >
+                <span>Preview Sample Devices</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredDevices.map((device) => {
+              const isOnline = device.status === "ONLINE";
+
+              return (
+                <div
+                  key={device.id}
+                  className="p-5 rounded-2xl glass-panel border border-slate-800 hover:border-slate-700/80 transition-all flex flex-col justify-between shadow-xl"
+                >
+                  <div>
+                    {/* Top line with OS & Presence Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        {device.platform}
+                      </span>
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         isOnline
