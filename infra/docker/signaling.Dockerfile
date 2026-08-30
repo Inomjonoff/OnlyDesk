@@ -1,20 +1,16 @@
-FROM node:22-alpine AS base
+FROM node:22-slim AS base
 WORKDIR /app
-RUN npm install -g pnpm
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN npm install -g pnpm@10.30.2 turbo
 
 FROM base AS builder
 COPY . .
 RUN pnpm install --no-frozen-lockfile
-RUN pnpm --filter @nexusdesk/config build || true
-RUN pnpm --filter @nexusdesk/crypto build || true
-RUN pnpm --filter @nexusdesk/protocol build || true
-RUN pnpm --filter @nexusdesk/validation build || true
-RUN pnpm --filter @nexusdesk/types build || true
-RUN pnpm --filter @nexusdesk/signaling build
+RUN pnpm turbo run build --filter=@nexusdesk/signaling...
 
 FROM base AS runner
 ENV NODE_ENV=production
 COPY --from=builder /app /app
 WORKDIR /app/services/signaling
 EXPOSE 4001
-CMD ["pnpm", "start"]
+CMD ["node", "dist/index.js"]
