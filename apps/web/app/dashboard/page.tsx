@@ -107,7 +107,8 @@ export default function DashboardPage() {
 
   const fetchDevices = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/v1/devices");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const res = await fetch(`${apiUrl}/api/v1/devices`);
       if (res.ok) {
         const data = await res.json();
         if (data.devices && data.devices.length > 0) {
@@ -134,8 +135,9 @@ export default function DashboardPage() {
   // Initiate Remote Session
   const handleInitiateSession = async (device: DeviceItem) => {
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       const token = localStorage.getItem("nexus_access_token") || "mock_user_token";
-      const res = await fetch("http://localhost:4000/api/v1/sessions", {
+      const res = await fetch(`${apiUrl}/api/v1/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -235,7 +237,8 @@ export default function DashboardPage() {
   const handleCancelSession = async () => {
     if (activeSession) {
       try {
-        await fetch(`http://localhost:4000/api/v1/sessions/${activeSession.sessionId}/cancel`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        await fetch(`${apiUrl}/api/v1/sessions/${activeSession.sessionId}/cancel`, {
           method: "POST",
         });
       } catch {
