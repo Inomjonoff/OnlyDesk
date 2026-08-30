@@ -30,7 +30,7 @@ export async function inviteRoutes(server: FastifyInstance) {
 
     const invite: SessionInvite = {
       inviteToken,
-      creatorUserId: req.user.sub,
+      creatorUserId: req.user!.sub,
       targetDeviceId: body.targetDeviceId,
       expiresAt,
       used: false,

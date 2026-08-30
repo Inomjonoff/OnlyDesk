@@ -3,7 +3,7 @@ import fastifyWebsocket from "@fastify/websocket";
 import { WebSocket } from "ws";
 import * as jwt from "jsonwebtoken";
 import { getEnv } from "@nexusdesk/config";
-import { SignalingClientMessageSchema } from "@nexusdesk/validation";
+import { SignalingClientMessageSchema, SignalingClientMessage } from "@nexusdesk/validation";
 import { SignalingEventEnvelope, SessionPermission } from "@nexusdesk/types";
 import { generateSecureToken } from "@nexusdesk/crypto";
 import { SignalingSessionManager } from "./session-manager";
