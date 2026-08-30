@@ -48,11 +48,12 @@ export class UserRepository {
 
     const now = new Date();
     for (const acc of defaultAccounts) {
+      const defaultPass = acc.passwords[0] ?? "admin123";
       const stored: StoredUser = {
         id: acc.id,
         email: acc.email.toLowerCase().trim(),
         name: acc.name,
-        passwordHash: sha256(acc.passwords[0]),
+        passwordHash: sha256(defaultPass),
         role: acc.role,
         twoFactorEnabled: false,
         createdAt: now,
