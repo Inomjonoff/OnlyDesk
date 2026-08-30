@@ -3,32 +3,5 @@
   "framework": "nextjs",
   "buildCommand": "pnpm --filter @nexusdesk/web build",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "pnpm install",
-  "experimentalServices": {
-    "web": {
-      "root": "apps/web",
-      "routePrefix": "/",
-      "framework": "nextjs"
-    },
-    "ai": {
-      "root": "services/ai",
-      "entrypoint": "dist/index.js",
-      "routePrefix": "/_/ai"
-    },
-    "api": {
-      "root": "services/api",
-      "entrypoint": "dist/index.js",
-      "routePrefix": "/_/api"
-    },
-    "signaling": {
-      "root": "services/signaling",
-      "entrypoint": "dist/index.js",
-      "routePrefix": "/_/signaling"
-    },
-    "worker": {
-      "root": "services/worker",
-      "entrypoint": "dist/index.js",
-      "routePrefix": "/_/worker"
-    }
-  }
+  "installCommand": "pnpm install"
 }
